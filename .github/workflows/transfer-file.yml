@@ -16,7 +16,7 @@ jobs:
     env:
       SOURCE_REPO: "krnchittora2/portfolio"
       DEST_REPO: "krnchittora2/Cross-Project-File-Transfer-Pipeline"
-      FILE_PATH: "Readme.md"
+      FILE_PATH: "README.md"
       DEST_BRANCH: "file-update-$(date +%s)"
       COMMIT_MESSAGE: "Auto-transfer: Updated file from source repo"
       GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
