@@ -16,16 +16,13 @@ jobs:
     env:
       SOURCE_REPO: "krnchittora2/portfolio"
       DEST_REPO: "krnchittora2/Cross-Project-File-Transfer-Pipeline"
+      DEST_BRANCH: "file-update"
+      MERGE_BRANCH: "test"
       FILE_PATH: "README.md"
       COMMIT_MESSAGE: "Auto-transfer: Updated file from source repo"
       GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-      MERGE_BRANCH: "test"
 
     steps:
-      - name: Generate unique branch name
-        id: gen_branch
-        run: echo "DEST_BRANCH=file-update-$(date +%s)" >> $GITHUB_ENV
-
       - name: Checkout Source Repository
         uses: actions/checkout@v4
         with:
@@ -49,8 +46,8 @@ jobs:
       - name: Commit and Push Changes
         run: |
           cd destination
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "Workflow Bot by Karan"
+          git config user.email "karan-bot@users.noreply.github.com"
           git checkout -b "${{ env.DEST_BRANCH }}"
           git add "${{ env.FILE_PATH }}"
           git commit -m "${{ env.COMMIT_MESSAGE }}" || echo "No changes to commit."
@@ -69,3 +66,9 @@ jobs:
             - Source Repo: ${{ env.SOURCE_REPO }}
             - File: ${{ env.FILE_PATH }}
             - Time: ${{ github.run_id }}
+          # ↓↓↓ prevent auto-merge or closing PR automatically
+          delete-branch: false
+          draft: false
+          labels: sync-update
+          # ↓↓↓ This flag prevents merging PR automatically if already exists
+          branch-suffix: timestamp
