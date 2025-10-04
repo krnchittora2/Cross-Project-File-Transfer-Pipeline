@@ -1,12 +1,7 @@
 name: File Transfer and Merge Request
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
-  schedule:
-    - cron: '30 21 * * *'  # Runs daily at 3 AM UTC
 
 jobs:
   transfer-and-pr:
@@ -38,9 +33,6 @@ jobs:
           repository: ${{ env.DEST_REPO }}
           token: ${{ env.GITHUB_TOKEN }}
           path: destination
-
-      - name: Debug Source Repo
-        run: ls -R source
 
       - name: Copy File from Source to Destination
         run: |
