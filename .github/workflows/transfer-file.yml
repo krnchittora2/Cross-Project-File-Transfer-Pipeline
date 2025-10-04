@@ -63,4 +63,10 @@ jobs:
             - Source Repo: ${{ env.SOURCE_REPO }}
             - File: ${{ env.FILE_PATH }}
             - Time: ${{ github.run_id }}
+          # ↓↓↓ prevent auto-merge or closing PR automatically
+          delete-branch: false
+          draft: false
+          labels: sync-update
+          # ↓↓↓ This flag prevents merging PR automatically if already exists
+          branch-suffix: timestamp
 
