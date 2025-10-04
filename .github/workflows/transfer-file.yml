@@ -1,15 +1,15 @@
-name: File Transfer and Merge Request
+name: Cross-Repo File Transfer
 
 on:
-  # push:
-  #   branches:
-  #     - main
   workflow_dispatch:
   # schedule:
-  #   - cron: '0 3 * * *'  # Runs daily at 3 AM UTC
+  #   - cron: "0 */6 * * *"  # every 6 hours (adjust as needed)
+  push:
+    branches:
+      - main
 
 jobs:
-  transfer-and-pr:
+  sync-file:
     runs-on: ubuntu-latest
     name: Transfer File and Create Merge Request
 
@@ -23,55 +23,71 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
     steps:
-      - name: Checkout Source Repository
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ env.SOURCE_REPO }}
-          token: ${{ env.GITHUB_TOKEN }}
-          path: source
-          clean: true
-
-      - name: Checkout Destination Repository
+      # Step 1: Checkout the destination repo (target repo)
+      - name: Checkout destination repository
         uses: actions/checkout@v4
         with:
           repository: ${{ env.DEST_REPO }}
-          token: ${{ env.GITHUB_TOKEN }}
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           path: destination
+          clean: true  # ensures workspace is reset every time
+
+      # Step 2: Checkout the source repo (where file comes from)
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.SOURCE_REPO }}
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          path: source
           clean: true
 
-      - name: Copy File from Source to Destination
+      # Step 3: Compare and copy only if changed
+      - name: Compare and copy file if updated
+        id: filecheck
         run: |
-          mkdir -p "$(dirname destination/${{ env.FILE_PATH }})"
-          cp "source/${{ env.FILE_PATH }}" "destination/${{ env.FILE_PATH }}"
-          echo "✅ File copied from source to destination."
+          SRC_FILE="source/README.md"
+          DEST_FILE="destination/README.md"
 
-      - name: Commit and Push Changes
-        run: |
-          cd destination
-          git config user.name "Workflow Bot by Karan"
-          git config user.email "karan-bot@users.noreply.github.com"
-          git fetch
-          git checkout -b ${{ env.DEST_BRANCH }} origin/${{ env.DEST_BRANCH }}
-          git add "${{ env.FILE_PATH }}"
-          git commit -m "${{ env.COMMIT_MESSAGE }}" || echo "No changes to commit."
-          git push origin "${{ env.DEST_BRANCH }}" || echo "No changes to push."
+          if [ ! -f "$SRC_FILE" ]; then
+            echo "❌ Source file not found: $SRC_FILE"
+            exit 1
+          fi
 
-      - name: Create Pull Request in Destination Repo
+          mkdir -p "$(dirname "$DEST_FILE")"
+
+          if cmp -s "$SRC_FILE" "$DEST_FILE"; then
+            echo "✅ Files are identical, skipping copy."
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            cp "$SRC_FILE" "$DEST_FILE"
+            echo "✅ File copied successfully."
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      # Step 4: Skip PR creation if no file changes
+      - name: Skip if no changes
+        if: steps.filecheck.outputs.changed == 'false'
+        run: echo "🟢 No updates detected. Skipping PR creation."
+
+      # Step 5: Commit and create a pull request (only if changed)
+      - name: Commit and create PR
+        if: steps.filecheck.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ env.GITHUB_TOKEN }}
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           path: destination
+          commit-message: "Auto-transfer: Synced README.md from ${{ env.SOURCE_REPO }}"
           branch: ${{ env.MERGE_BRANCH }}
           base: ${{ env.DEST_BRANCH }}
-          title: "Auto File Sync from ${{ env.SOURCE_REPO }}"
+          title: "Auto PR: Sync README.md from ${{ env.SOURCE_REPO }}"
           body: |
-            This pull request was automatically created by a GitHub Action.
-            - Source Repo: ${{ env.SOURCE_REPO }}
-            - File: ${{ env.FILE_PATH }}
-            - Time: ${{ github.run_id }}
-          # ↓↓↓ prevent auto-merge or closing PR automatically
-          branch-suffix: none
-          update-branch: false
+            This PR automatically syncs README.md from the ${{ env.SOURCE_REPO }} repository.
+
+            - Source: ${{ env.SOURCE_REPO }}
+            - Target: ${{ env.MERGE_BRANCH }}
+            - Triggered by: ${{ github.event_name }} event
+
+          labels: automated-sync
           delete-branch: false
           draft: false
-          labels: sync-update
+
