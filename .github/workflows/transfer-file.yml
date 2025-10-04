@@ -55,8 +55,8 @@ jobs:
         with:
           token: ${{ env.GITHUB_TOKEN }}
           path: destination
-          base: main
-          branch: ${{ env.DEST_BRANCH }}
+          branch: main
+          base: ${{ env.DEST_BRANCH }}
           title: "Auto File Sync from ${{ env.SOURCE_REPO }}"
           body: |
             This pull request was automatically created by a GitHub Action.
