@@ -17,11 +17,14 @@ jobs:
       SOURCE_REPO: "krnchittora2/portfolio"
       DEST_REPO: "krnchittora2/Cross-Project-File-Transfer-Pipeline"
       FILE_PATH: "README.md"
-      DEST_BRANCH: "file-update-$(date +%s)"
       COMMIT_MESSAGE: "Auto-transfer: Updated file from source repo"
       GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
     steps:
+      - name: Generate unique branch name
+        id: gen_branch
+        run: echo "DEST_BRANCH=file-update-$(date +%s)" >> $GITHUB_ENV
+
       - name: Checkout Source Repository
         uses: actions/checkout@v4
         with:
@@ -35,6 +38,9 @@ jobs:
           repository: ${{ env.DEST_REPO }}
           token: ${{ env.GITHUB_TOKEN }}
           path: destination
+
+      - name: Debug Source Repo
+        run: ls -R source
 
       - name: Copy File from Source to Destination
         run: |
