@@ -1,7 +1,12 @@
 name: File Transfer and Merge Request
 
 on:
+  # push:
+  #   branches:
+  #     - main
   workflow_dispatch:
+  # schedule:
+  #   - cron: '0 3 * * *'  # Runs daily at 3 AM UTC
 
 jobs:
   transfer-and-pr:
@@ -14,6 +19,7 @@ jobs:
       FILE_PATH: "README.md"
       COMMIT_MESSAGE: "Auto-transfer: Updated file from source repo"
       GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      MERGE_BRANCH: "test"
 
     steps:
       - name: Generate unique branch name
@@ -55,7 +61,7 @@ jobs:
         with:
           token: ${{ env.GITHUB_TOKEN }}
           path: destination
-          branch: main
+          branch: ${{ env.MERGE_BRANCH }}
           base: ${{ env.DEST_BRANCH }}
           title: "Auto File Sync from ${{ env.SOURCE_REPO }}"
           body: |
@@ -63,10 +69,3 @@ jobs:
             - Source Repo: ${{ env.SOURCE_REPO }}
             - File: ${{ env.FILE_PATH }}
             - Time: ${{ github.run_id }}
-          # ↓↓↓ prevent auto-merge or closing PR automatically
-          delete-branch: false
-          draft: false
-          labels: sync-update
-          # ↓↓↓ This flag prevents merging PR automatically if already exists
-          branch-suffix: timestamp
-
