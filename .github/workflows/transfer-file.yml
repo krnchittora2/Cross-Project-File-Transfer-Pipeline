@@ -51,7 +51,7 @@ jobs:
           git checkout -b "${{ env.DEST_BRANCH }}"
           git fetch
           git branch --set-upstream-to=origin/${{ env.DEST_BRANCH }} ${{ env.DEST_BRANCH }}
-          git pull
+          git pull --rebase --ff-only
           git add "${{ env.FILE_PATH }}"
           git commit -m "${{ env.COMMIT_MESSAGE }}" || echo "No changes to commit."
           git push --fast-forward origin "${{ env.DEST_BRANCH }}" || echo "No changes to push."
