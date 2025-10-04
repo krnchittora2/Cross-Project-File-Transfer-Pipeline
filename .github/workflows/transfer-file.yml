@@ -48,13 +48,11 @@ jobs:
           cd destination
           git config user.name "Workflow Bot by Karan"
           git config user.email "karan-bot@users.noreply.github.com"
-          git checkout -b "${{ env.DEST_BRANCH }}"
           git fetch
-          git branch --set-upstream-to=origin/${{ env.DEST_BRANCH }} ${{ env.DEST_BRANCH }}
-          git pull --rebase --ff-only
+          git checkout -b origin/${{ env.DEST_BRANCH }}
           git add "${{ env.FILE_PATH }}"
           git commit -m "${{ env.COMMIT_MESSAGE }}" || echo "No changes to commit."
-          git push --fast-forward origin "${{ env.DEST_BRANCH }}" || echo "No changes to push."
+          git push origin "${{ env.DEST_BRANCH }}" || echo "No changes to push."
 
       - name: Create Pull Request in Destination Repo
         uses: peter-evans/create-pull-request@v6
