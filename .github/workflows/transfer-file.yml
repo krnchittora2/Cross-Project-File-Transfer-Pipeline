@@ -29,6 +29,7 @@ jobs:
           repository: ${{ env.SOURCE_REPO }}
           token: ${{ env.GITHUB_TOKEN }}
           path: source
+          clean: true
 
       - name: Checkout Destination Repository
         uses: actions/checkout@v4
@@ -36,6 +37,7 @@ jobs:
           repository: ${{ env.DEST_REPO }}
           token: ${{ env.GITHUB_TOKEN }}
           path: destination
+          clean: true
 
       - name: Copy File from Source to Destination
         run: |
