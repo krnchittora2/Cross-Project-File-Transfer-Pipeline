@@ -1,0 +1,67 @@
+name: File Transfer and Merge Request
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    - cron: '0/5 * * * *'  # Runs daily at 3 AM UTC
+
+jobs:
+  transfer-and-pr:
+    runs-on: ubuntu-latest
+    name: Transfer File and Create Merge Request
+
+    env:
+      SOURCE_REPO: "krnchittora2/portfolio"
+      DEST_REPO: "krnchittora2/Cross-Project-File-Transfer-Pipeline"
+      FILE_PATH: "Readme.md"
+      DEST_BRANCH: "file-update-$(date +%s)"
+      COMMIT_MESSAGE: "Auto-transfer: Updated file from source repo"
+      GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+    steps:
+      - name: Checkout Source Repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.SOURCE_REPO }}
+          token: ${{ env.GITHUB_TOKEN }}
+          path: source
+
+      - name: Checkout Destination Repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.DEST_REPO }}
+          token: ${{ env.GITHUB_TOKEN }}
+          path: destination
+
+      - name: Copy File from Source to Destination
+        run: |
+          mkdir -p "$(dirname destination/${{ env.FILE_PATH }})"
+          cp "source/${{ env.FILE_PATH }}" "destination/${{ env.FILE_PATH }}"
+          echo "✅ File copied from source to destination."
+
+      - name: Commit and Push Changes
+        run: |
+          cd destination
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "${{ env.DEST_BRANCH }}"
+          git add "${{ env.FILE_PATH }}"
+          git commit -m "${{ env.COMMIT_MESSAGE }}" || echo "No changes to commit."
+          git push origin "${{ env.DEST_BRANCH }}" || echo "No changes to push."
+
+      - name: Create Pull Request in Destination Repo
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ env.GITHUB_TOKEN }}
+          repository: ${{ env.DEST_REPO }}
+          base: main
+          head: ${{ env.DEST_BRANCH }}
+          title: "Auto File Sync from ${{ env.SOURCE_REPO }}"
+          body: |
+            This pull request was automatically created by a GitHub Action.
+            - Source Repo: ${{ env.SOURCE_REPO }}
+            - File: ${{ env.FILE_PATH }}
+            - Time: ${{ github.run_id }}
