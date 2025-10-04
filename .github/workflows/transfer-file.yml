@@ -56,12 +56,13 @@ jobs:
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ env.GITHUB_TOKEN }}
-          repository: ${{ env.DEST_REPO }}
+          path: destination
           base: main
-          head: ${{ env.DEST_BRANCH }}
+          branch: ${{ env.DEST_BRANCH }}
           title: "Auto File Sync from ${{ env.SOURCE_REPO }}"
           body: |
             This pull request was automatically created by a GitHub Action.
             - Source Repo: ${{ env.SOURCE_REPO }}
             - File: ${{ env.FILE_PATH }}
             - Time: ${{ github.run_id }}
+
