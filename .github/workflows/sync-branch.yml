@@ -2,6 +2,15 @@ name: Sync Child Branch with Base
 
 on:
   workflow_dispatch:  # manual trigger
+    inputs:
+      target-branch:
+        description: 'The branch to sync with base'
+        required: true
+        default: 'test'
+      source-branch:
+        description: 'The base branch'
+        required: true
+        default: 'main'
   schedule:
     - cron: "0 0 * * *"  # runs daily at 12 AM UTC
 
@@ -10,8 +19,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      BASE: "main"
-      CHILD: "test"
+      BASE: "${{ github.event.inputs.source-branch }}"
+      CHILD: "${{ github.event.inputs.target-branch }}"
 
     steps:
       # Step 1: Checkout the repository
