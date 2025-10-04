@@ -1,0 +1,51 @@
+name: Sync Child Branch with Base
+
+on:
+  workflow_dispatch:  # manual trigger
+  schedule:
+    - cron: "0 0 * * *"  # runs daily at 12 AM UTC
+
+jobs:
+  sync-test-branch:
+    runs-on: ubuntu-latest
+
+    env:
+      BASE: "main"
+      CHILD: "test"
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          fetch-depth: 0  # fetch all branches and history
+
+      # Step 2: Configure Git
+      - name: Configure Git
+        run: |
+          git config user.name "Workflow Bot"
+          git config user.email "workflow.bot@users.noreply.github.com"
+
+      # Step 3: Fetch all branches
+      - name: Fetch all branches
+        run: |
+          git fetch origin
+
+      # Step 4: Reset test branch to main
+      - name: Reset CHILD branch to main
+        run: |
+          # Checkout CHILD branch (create if doesn't exist)
+          if git show-ref --verify --quiet refs/heads/${{ env.CHILD }}; then
+            git checkout ${{ env.CHILD }}
+          else
+            git checkout -b ${{ env.CHILD }}
+          fi
+
+          # Hard reset to main
+          git reset --hard origin/${{ env.BASE }}
+
+      # Step 5: Push changes to test branch
+      - name: Push reset branch
+        run: |
+          git push origin ${{ env.CHILD }} --force
